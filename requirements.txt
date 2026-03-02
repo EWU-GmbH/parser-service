@@ -1,9 +1,9 @@
 flask
 gunicorn
-unstructured
-pdfminer.six
-pikepdf
-pypdf
-pillow
+# "all-docs" holt alles: OCR (Tesseract), Vision-Modelle (Detectron2) für Layouts
+unstructured[all-docs]
 mistralai
 nltk
+# Torch ist für die Layout-Erkennung nötig
+torch
+torchvision
