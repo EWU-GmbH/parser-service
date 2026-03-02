@@ -1,9 +1,13 @@
 flask
 gunicorn
-# "all-docs" holt alles: OCR (Tesseract), Vision-Modelle (Detectron2) für Layouts
-unstructured[all-docs]
+unstructured
+pdfminer.six
+pikepdf
+pypdf
 mistralai
 nltk
-# Torch ist für die Layout-Erkennung nötig
-torch
-torchvision
+pi_heif
+# Neu für Word & Excel:
+python-docx
+openpyxl
+pandas
