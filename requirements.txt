@@ -1,0 +1,7 @@
+flask
+gunicorn
+unstructured
+mistralai
+nltk
+# Optional: Falls du PDFs mit Tabellen hast, hilft das hier, sonst weglassen um Platz zu sparen:
+# unstructured-inference
