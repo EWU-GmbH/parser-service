@@ -1,6 +1,9 @@
 flask
 gunicorn
-unstructured[pdf]
+unstructured
 pdfminer.six
+pikepdf
+pypdf
+pillow
 mistralai
 nltk
