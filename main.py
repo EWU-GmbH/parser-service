@@ -5,40 +5,41 @@ from mistralai import Mistral
 
 app = Flask(__name__)
 
-# API Key sicher aus den Coolify-Umgebungsvariablen laden
 api_key = os.environ.get("MISTRAL_API_KEY")
 client = Mistral(api_key=api_key) if api_key else None
 
 @app.route('/parse-cv', methods=['POST'])
 def parse_cv():
-    # Sicherheitscheck: Ist ein API Key da?
-    if not client:
-        return jsonify({"error": "MISTRAL_API_KEY not set"}), 500
-
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    if not client: return jsonify({"error": "No API Key"}), 500
+    if 'file' not in request.files: return jsonify({"error": "No file"}), 400
         
+    temp_path = "/tmp/temp_cv.pdf"
     try:
         file = request.files['file']
-        temp_path = "/tmp/temp_cv.pdf"
         file.save(temp_path)
         
-        # 1. Parsing: PDF in Text umwandeln (Hier arbeitet dein Server kurz)
-        # strategy="hi_res" nutzt OCR, falls nötig.
+        # HIER IST DER UNTERSCHIED:
+        # "hi_res" nutzt KI, um das Layout zu verstehen (Spalten, Header, etc.)
+        # Das ist langsamer (10-30 Sek), aber extrem genau.
         elements = partition_pdf(
             temp_path, 
-            strategy="hi_res", 
-            languages=["deu", "eng"]
+            strategy="hi_res",           
+            infer_table_structure=True,  # Tabellen in CVs verstehen
+            languages=["deu", "eng"]     # Deutsche OCR aktivieren
         )
+        
+        # Text intelligent zusammenbauen
         text_content = "\n\n".join([str(el) for el in elements])
         
-        # 2. KI-Analyse: Text an Mistral (EU) senden
-        # Wir kürzen den Text sicherheitshalber auf 25.000 Zeichen, damit das Limit nicht gesprengt wird
+        # Analyse durch Mistral
         prompt = f"""
-        Du bist ein HR-Daten-Experte. Extrahiere die folgenden Daten aus dem Lebenslauf und gib sie NUR als JSON zurück.
-        Format: {{ "vorname": "", "nachname": "", "email": "", "skills": ["skill1", "skill2"], "letzte_position": "" }}
+        Analysiere diesen Lebenslauf. Extrahiere als JSON:
+        - vorname, nachname, email, telefon
+        - skills (als Array)
+        - letzte_position (Titel, Firma, Zeitraum)
+        - ausbildung (höchster Abschluss)
         
-        Lebenslauf Text:
+        Text:
         {text_content[:25000]}
         """
 
@@ -48,17 +49,11 @@ def parse_cv():
             response_format={"type": "json_object"}
         )
         
-        # Aufräumen
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-        
-        # JSON Ergebnis zurückgeben
+        if os.path.exists(temp_path): os.remove(temp_path)
         return chat_response.choices[0].message.content, 200, {'Content-Type': 'application/json'}
 
     except Exception as e:
-        # Aufräumen im Fehlerfall
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        if os.path.exists(temp_path): os.remove(temp_path)
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
